@@ -12,6 +12,7 @@ type UnitState = {
   id: string;
   paralyzed: boolean;
   poison: number;
+  invulnerable: boolean;
   lastThrow: number[];
 };
 type CombatState = {
@@ -959,12 +960,14 @@ export class AppComponent implements OnInit {
           paralyzed: false,
           lastThrow: [],
           poison: 0,
+          invulnerable: false,
         },
         defender: {
           id: defender.id,
           paralyzed: false,
           lastThrow: [],
           poison: 0,
+          invulnerable: false,
         },
       };
       const winner = this.startCombat(
@@ -1026,6 +1029,23 @@ export class AppComponent implements OnInit {
 
     isAdjacent = this.checkAdjacency(attacker, isAdjacent);
 
+    const preemptiveShot = () => {
+      console.log(
+        'Round #',
+        combatRound,
+        `\n${attacker.id} health: ${attacker.health}\n${defender.id} health: ${defender.health}`
+      );
+      if (
+        ((this.hasSkill(defender, SPECIALS.PREEMPTIVE_SHOT_ONCE) &&
+          combatRound == 0) ||
+          this.hasSkill(defender, SPECIALS.PREEMPTIVE_SHOT_MANY)) &&
+        !this.hasSkill(attacker, SPECIALS.IGNORE_RETALIATION)
+      ) {
+        console.log('Preemtive shot vs.', attacker);
+        this.doDamage(defender, attacker, isAdjacent, true, state);
+      }
+    };
+
     // ACTIVATION PHASE
     if (this.hasSkill(attacker, SPECIALS.HEAL_ONE_ON_ACTIVATION)) {
       const data = this.getUnitById(attacker.id) as Unit;
@@ -1080,6 +1100,10 @@ export class AppComponent implements OnInit {
       }
     }
 
+    if (this.hasSkill(attacker, SPECIALS.INVULNERABLE) && combatRound == 0) {
+      state.attacker.invulnerable = true;
+    }
+
     if (state.attacker.poison > 0) {
       state.attacker.poison--;
       attacker.health--;
@@ -1097,6 +1121,9 @@ export class AppComponent implements OnInit {
 
     if (state.attacker.paralyzed) {
       state.attacker.paralyzed = false;
+    } else if (state.defender.invulnerable) {
+      console.log(`${defender.id} is invulnerable!`);
+      state.defender.invulnerable = false;
     } else {
       // ATTACK (if not paralyzed
       let damageModifier = 0;
@@ -1136,6 +1163,8 @@ export class AppComponent implements OnInit {
       ) {
         damageModifier = 1;
       }
+      preemptiveShot();
+
       this.doDamage(
         attacker,
         defender,
@@ -1161,6 +1190,7 @@ export class AppComponent implements OnInit {
         if (!downgrade) {
           return attacker;
         } else {
+          console.log('FLIPPED!');
           defender = this.doDowngrade(defender, downgrade);
           deathStare();
           if (this.isDead(defender)) {
@@ -1182,6 +1212,11 @@ export class AppComponent implements OnInit {
       ) {
         // Don't retaliate if the attacker ignores it
         // or if the attacker is ranged but not adjacent to the defender
+      } else if (
+        this.hasSkill(defender, SPECIALS.PREEMPTIVE_SHOT_MANY) ||
+        this.hasSkill(defender, SPECIALS.PREEMPTIVE_SHOT_ONCE)
+      ) {
+        // Don't retaliate if defender has Preemptive Shot, since they have already done so
       } else {
         // console.log(defender.id, 'RETALLIATE')
         let damageModifier = 0;
@@ -1425,6 +1460,12 @@ export class AppComponent implements OnInit {
         this.containsRoll(state.attacker.lastThrow, -1)
       ) {
         modifier -= 2;
+      }
+      if (
+        this.hasSkill(source, SPECIALS.BYPASS_DEFENSE) &&
+        this.containsRoll(state.attacker.lastThrow, 1)
+      ) {
+        modifier -= 1;
       }
       return target.defence + modifier <= 0 ? 0 : target.defence + modifier;
     };
