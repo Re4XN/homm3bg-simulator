@@ -5,13 +5,12 @@
   display: flex;
   position: fixed;
   z-index: 1000;
-  background: rgba(0, 0, 0, .2);
+  background: rgba(0, 0, 0, 0.2);
   width: 100vw;
   height: 100vh;
   justify-content: center;
   align-items: center;
 }
-
 
 $weight: 500;
 .processString {
@@ -23,13 +22,12 @@ $weight: 500;
 }
 
 .row_color {
-
   &__castle {
     color: midnightblue;
     font-weight: $weight;
   }
   &__dungeon {
-    color: mediumpurple;//rebeccapurple
+    color: mediumpurple; //rebeccapurple
     font-weight: $weight;
   }
   &__necropolis {
@@ -52,6 +50,10 @@ $weight: 500;
     color: red;
     font-weight: $weight;
   }
+  &__factory {
+    color: orange;
+    font-weight: $weight;
+  }
   &__neutral {
     color: goldenrod;
     font-weight: $weight;
@@ -70,7 +72,7 @@ $weight: 500;
     font-weight: $weight;
   }
   &__azure {
-    color: #069AF3;
+    color: #069af3;
     font-weight: $weight;
   }
 }
@@ -140,5 +142,3 @@ $weight: 500;
     margin-left: 20px;
   }
 }
-
-
